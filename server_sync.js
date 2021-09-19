@@ -233,11 +233,21 @@ async function loadApp(app)
 	document.body.prepend(style);
 }
 
+function showError(text)
+{
+	new Vue({
+		el: '#app',
+		data: {
+		  message: `Error: ${text}`
+		}
+	  });
+}
+
 async function main()
 {
 	if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page'])
 	{
-		throw 'Invalid url';
+		showError('Invalid url')
 	}
 	else
 	{
@@ -250,7 +260,7 @@ async function main()
 		}
 		else
 		{
-			throw 'Invalid app';
+			showError('Invalid app')
 		}
 	}
 }
