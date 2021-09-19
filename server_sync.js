@@ -98,7 +98,7 @@ function send_json(path, data) {
 		let src = new URL(await server_url_promise);
 		src.pathname += "/" + path;
 		src.searchParams.set('message_id', message_id);
-		src.searchParams.set('message', JSON.stringify(data || {}));
+		src.searchParams.set('message', btoa(JSON.stringify(data || {})));
 
 		src.searchParams.set('app', base_data['app']);
 		src.searchParams.set('avatar', base_data['avatar']);
