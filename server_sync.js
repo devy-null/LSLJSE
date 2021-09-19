@@ -46,6 +46,7 @@ async function getURL() {
 				'Content-Type': 'application/json',
 				'Authorization': 'Basic ' + btoa('JavascriptEngine:qb9w8mLJ6cZrfAy')
 			},
+			credentials: 'include',
 			body: JSON.stringify({
 				"search": [[
 					{
