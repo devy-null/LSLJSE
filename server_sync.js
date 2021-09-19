@@ -3,19 +3,38 @@ function uuidv4() {
 	return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 }
 
+const base_data = JSON.parse(atob(document.location.hash.substring(1)));
+let gitApp;
+
+async function getApps()
+{
+	let pull_requests = await (await fetch('https://api.github.com/repos/devy-null/LSLJSE/pulls')).json();
+
+	let apps = pull_requests
+				.filter(pr => pr.base.label == 'devy-null:main')
+				.map(pr => ({
+					id: pr.head.label,
+					name: pr.title,
+					description: pr.body,
+					created: pr.created_at,
+					updated: pr.updated_at,
+					is_official: pr.author_association == 'OWNER',
+					author: {
+						img: pr.user.avatar_url,
+						name: pr.user.login
+					},
+					pull_request: pr
+				}));
+	
+	return apps;
+}
+
 function ack(data) {
 	document.dispatchEvent(new CustomEvent('server_ack', { detail: data }));
 }
 
 function poll_response(queue) {
 	document.dispatchEvent(new CustomEvent('server_poll_response', { detail: queue }));
-}
-
-const base_data = JSON.parse(atob(document.location.hash.substring(1)));
-
-if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] /*|| !base_data['page']*/)
-{
-	throw 'Invalid url';
 }
 
 async function getURL() {
@@ -190,4 +209,50 @@ async function start_poll() {
 	}
 }
 
-start_poll();
+async function loadApp(app)
+{
+	let getFile = async (path) => 
+	{
+		let filePath = app.pull_request.head.repo.contents_url.replace("{+path}", path) + '?ref=' + app.pull_request.head.ref;
+		let info = await (await fetch(filePath)).json();
+		return await (await fetch(info.download_url)).text();
+	};
+
+	let html = await getFile('app.body');
+	let css = await getFile('app.css');
+	let js = await getFile('app.js');
+
+	document.body.innerHTML = html;
+
+	let script = document.createElement('script');
+	script.text = js;
+	document.body.prepend(script);
+	
+	let style = document.createElement('style');
+	style.text = css;
+	document.body.prepend(style);
+}
+
+async function main()
+{
+	if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page'])
+	{
+		throw 'Invalid url';
+	}
+	else
+	{
+		gitApp = (await getApps()).find(app => app.id == base_data['page']);
+
+		if (gitApp)
+		{
+			loadApp(gitApp);
+			start_poll();
+		}
+		else
+		{
+			throw 'Invalid app';
+		}
+	}
+}
+
+main();
