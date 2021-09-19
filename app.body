@@ -1,3 +1,4 @@
 <div id="app">
   {{ message }}
+  <button v-on:click="greet">Greet</button>
 </div>
