@@ -258,11 +258,21 @@ async function main()
 		if (gitApp)
 		{
 			loadApp(gitApp);
-			start_poll();
+
+			let fetchedURL = await server_url_promise.catch(err => null);
+
+			if (fetchedURL)
+			{
+				start_poll();
+			}
+			else
+			{
+				showError(`Can't connect!`);
+			}
 		}
 		else
 		{
-			showError('Invalid app')
+			showError('Invalid app');
 		}
 	}
 }
