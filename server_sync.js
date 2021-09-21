@@ -240,9 +240,9 @@ function showError(text)
 	new Vue({
 		el: '#app',
 		data: {
-		  message: `Error: ${text}`
+			message: `Error: ${text}`
 		}
-	  });
+	});
 }
 
 async function main()
