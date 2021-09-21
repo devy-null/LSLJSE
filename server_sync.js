@@ -257,12 +257,11 @@ async function main()
 
 		if (gitApp)
 		{
-			loadApp(gitApp);
-
 			let fetchedURL = await server_url_promise.catch(err => null);
 
 			if (fetchedURL)
 			{
+				loadApp(gitApp);
 				start_poll();
 			}
 			else
