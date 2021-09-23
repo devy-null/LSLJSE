@@ -43,11 +43,11 @@ async function getURL() {
 		{
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': 'Basic ' + btoa('JavascriptEngine:qb9w8mLJ6cZrfAy')
+				'Content-Type': 'application/json'
 			},
 			credentials: 'include',
 			body: JSON.stringify({
+				"rest_api_key": "c3WPSgC3LmW7ZdMaLMWODL",
 				"search": [[
 					{
 						"a": "aCvYRdJSnbAQz1CGlcRmoW",
