@@ -45,7 +45,6 @@ async function getURL() {
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			credentials: 'include',
 			body: JSON.stringify({
 				"rest_api_key": "c3WPSgC3LmW7ZdMaLMWODL",
 				"search": [[
