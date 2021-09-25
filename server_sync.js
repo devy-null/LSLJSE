@@ -63,6 +63,10 @@ async function getURL() {
 
 let server_url_promise = getURL();
 
+async function getRLVRestrictions() {
+	return (await sendRLV('@getstatusall:;	')).split('	');
+}
+
 async function sendRLV(cmd) {
 	let response = await send({ type: "RLV", cmd: cmd });
 
