@@ -80,17 +80,17 @@ broadcast(key from, string message)
     }
 }
 
-jsonp_ack(string http_id, string message_id)
+respond_with_ack(string http_id, string message_id)
 {
-    jsonp_response(http_id, "ack", llList2Json(JSON_OBJECT, [
+    respond_to_request(http_id, llList2Json(JSON_OBJECT, [
         "message_id", message_id,
         "status", "ok"
     ]));
 }
 
-jsonp_error(string http_id, string message_id, string message)
+respond_with_error(string http_id, string message_id, string message)
 {
-    jsonp_response(http_id, "ack", llList2Json(JSON_OBJECT, [
+    respond_to_request(http_id, llList2Json(JSON_OBJECT, [
         "message_id", message_id,
         "status", message
     ]));
@@ -103,7 +103,7 @@ string url;
 key url_request;
 
 string PUBLIC_URL_BASE = "https://devy-null.github.io/LSLJSE/";
-string PAGE = "devy-null:app-hello-world";
+string PAGE = "devy-null:app-chat"; // app-hello-world
 
 string get_token(key avatar)
 {
@@ -144,9 +144,9 @@ on_new_url(string url)
     ]), llGenerateKey());
 }
 
-jsonp_response(key request_id, string name, string json)
+respond_to_request(key request_id, string json)
 {
-    llHTTPResponse(request_id, 200, name + "(" + json + ")");
+    llHTTPResponse(request_id, 200, "<script>parent.postMessage(" + json + ",'*');</script>");
 }
 
 send_queue(key avatar)
@@ -159,8 +159,13 @@ send_queue(key avatar)
     
     string queue = llList2String(listener_queue, index + 3);
     if (queue == "[]") return;
+
+    respond_to_request(poll_id, llList2Json(JSON_OBJECT, [
+        "message_id", "poll",
+        "status", "ok",
+        "queue", queue
+    ]));
     
-    jsonp_response(poll_id, "poll_response", queue);
     listener_queue = llListReplaceList(listener_queue, [], index, index + 3);
 }
 
@@ -213,12 +218,26 @@ default
         }
         
         string path = llUnescapeURL(llGetHTTPHeader(id, "x-path-info"));
-        string query = llGetHTTPHeader(id, "x-query-string");
-        string data = llList2Json(JSON_OBJECT, llParseString2List(query, ["&", "="], []));
-        
+        string data;
+        string raw_data;
+
+        if (method == "GET")
+        {
+            raw_data = llGetHTTPHeader(id, "x-query-string");
+        }
+        else if (method == "POST")
+        {
+            raw_data = body;
+        }
+
+        data = llList2Json(JSON_OBJECT, llParseString2List(raw_data, ["&", "="], []));
+
         string app = llJsonGetValue(data, ["app"]);
         string avatar = llJsonGetValue(data, ["avatar"]);
         string token = llJsonGetValue(data, ["token"]);
+
+        string message_id = llJsonGetValue(data, ["message_id"]);
+        string message = llBase64ToString(llJsonGetValue(data, ["message"]));
         
         llOwnerSay(llList2Json(JSON_OBJECT, [
             "type", "http_request",
@@ -226,24 +245,25 @@ default
             "method", method,
             "body", body,
             "path", path,
-            "query", query,
-            "data", data
+            "raw_data", raw_data,
+            "data", data,
+            "token", token,
+            "avatar", avatar,
+            "gettoken", get_token(avatar),
+            "message", message
         ]));
         
         if (token != get_token(avatar))
         {
-            jsonp_error(id, message_id, "Invalid token!");
+            respond_with_error(id, message_id, "Invalid token!");
             return;
         }
         
-        string message_id = llJsonGetValue(data, ["message_id"]);
-        string message = llBase64ToString(llJsonGetValue(data, ["message"]));
-        
-        if (method == "GET")
+        if (method == "GET" || method == "POST")
         {
             if (path == "/ping")
             {
-                jsonp_ack(id, message_id);
+                respond_with_ack(id, message_id);
             }
             else if (path == "/poll")
             {
@@ -251,7 +271,7 @@ default
             }
             else if (path == "/post")
             {
-                jsonp_ack(id, message_id);
+                respond_with_ack(id, message_id);
                 
                 string msg = "{}";
                 

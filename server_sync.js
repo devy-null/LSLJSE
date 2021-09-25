@@ -148,12 +148,10 @@ function send_json(path, data) {
 
 				done = true;
 
-				if (event.detail.status == "ok")
-				{
+				if (event.detail.status == "ok") {
 					resolve(event.detail);
 				}
-				else
-				{
+				else {
 					reject({ message: event.detail.status });
 				}
 			}
@@ -225,6 +223,37 @@ async function start_poll() {
 			}
 		}
 	}
+}
+
+function postRawData(url, data) {
+	let iframe = document.createElement('iframe');
+	iframe.name = uuidv4();
+	//iframe.style.display = 'none';
+	document.body.appendChild(iframe);
+
+	document.addEventListener('message', function (msg) {
+		console.log('iframe msg', msg);
+	});
+
+	let form = document.createElement('form');
+	form.method = 'POST';
+	form.action = url;
+	form.target = iframe.name;
+
+	for (let [k, v] of Object.entries(data)) {
+		let dataInput = document.createElement('input');
+		dataInput.type = 'hidden';
+		dataInput.name = k;
+		dataInput.value = (v && v instanceof Object) ? JSON.stringify(v) : v;
+		form.appendChild(dataInput);
+	}
+
+	document.body.appendChild(form);
+
+	form.submit();
+
+	//document.body.removeChild(iframe);
+	//document.body.removeChild(form);
 }
 
 async function loadApp(app) {
