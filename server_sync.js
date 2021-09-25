@@ -148,7 +148,14 @@ function send_json(path, data) {
 
 				done = true;
 
-				resolve(event.detail);
+				if (event.detail.status == "ok")
+				{
+					resolve(event.detail);
+				}
+				else
+				{
+					reject({ message: event.detail.status });
+				}
 			}
 		};
 
