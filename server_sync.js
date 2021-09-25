@@ -222,10 +222,18 @@ async function start_poll() {
 
 async function loadApp(app) {
 	let getFile = async (path) => {
-		let filePath = app.pull_request.head.repo.contents_url.replace("{+path}", path) + '?ref=' + app.pull_request.head.ref;
-		if (new URL(location).searchParams.get('localhost') == 'true') filePath = `http://127.0.0.1:8080/${path}`;
-		let info = await (await fetch(filePath)).json();
-		return await (await fetch(info.download_url)).text();
+		let downloadPath;
+
+		if (new URL(location).searchParams.get('localhost') == 'true') {
+			downloadPath = `http://127.0.0.1:8080/${path}`;
+		}
+		else {
+			let filePath = app.pull_request.head.repo.contents_url.replace("{+path}", path) + '?ref=' + app.pull_request.head.ref;
+			let info = await (await fetch(filePath)).json();
+			downloadPath = info.download_url;
+		}
+
+		return await (await fetch(downloadPath)).text();
 	};
 
 	let html = await getFile('app.body');
