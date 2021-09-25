@@ -65,7 +65,7 @@ clean_queue()
     }
 }
 
-broadcast(key from, string message)
+broadcast(key from, string message, integer exclusive)
 {
     integer index = llGetListLength(listener_queue) / 4;
     
@@ -73,7 +73,7 @@ broadcast(key from, string message)
     {
         key avatar = llList2Key(listener_queue, (index * 4));
         
-        if (avatar != from)
+        if (!(exclusive && avatar == from))
         {
             enqueue_data_for_avatar(avatar, message);
         }
@@ -282,7 +282,7 @@ default
                 
                 if (llJsonGetValue(message, ["type"]) == "broadcast")
                 {
-                    broadcast(avatar, msg);
+                    broadcast(avatar, msg, llJsonGetValue(message, ["exclusive"]) == "true");
                 }
                 else
                 {
