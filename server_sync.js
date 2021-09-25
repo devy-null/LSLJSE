@@ -75,8 +75,10 @@ async function sendRLV(cmd) {
 }
 
 async function send(data, timeout) {
+	return send_with_iframe('post', data, timeout);
+	/*
 	return new Promise(async (resolve, reject) => {
-		let { message_id } = await send_json('post', data);
+		let { message_id } = await send_with_script('post', data);
 		let key = 'message::' + message_id;
 		let listener;
 		let timeoutid;
@@ -100,9 +102,87 @@ async function send(data, timeout) {
 
 		document.addEventListener(key, listener);
 	});
+	*/
 }
 
-function send_json(path, data) {
+function send_with_iframe(path, data, timeout) {
+	let message_id = uuidv4();
+
+	if (path == "poll") message_id = "poll";
+
+	let promise = new Promise(async (resolve, reject) => {
+		let url = new URL(await server_url_promise);
+		url.pathname += "/" + path;
+
+		let message = {
+			message_id: message_id,
+			message: btoa(JSON.stringify(data || {})),
+			app: base_data['app'],
+			avatar: base_data['avatar'],
+			token: base_data['token']
+		};
+
+		let iframe = document.createElement('iframe');
+		iframe.name = uuidv4();
+		iframe.style.display = 'none';
+		document.body.appendChild(iframe);
+
+		let form = document.createElement('form');
+		form.method = 'POST';
+		form.action = url;
+		form.target = iframe.name;
+
+		for (let [k, v] of Object.entries(message)) {
+			let dataInput = document.createElement('input');
+			dataInput.type = 'hidden';
+			dataInput.name = k;
+			dataInput.value = (v && v instanceof Object) ? JSON.stringify(v) : v;
+			form.appendChild(dataInput);
+		}
+
+		document.body.appendChild(form);
+
+		let message_name = 'server_message::' + message['message_id'],
+			listener,
+			timeoutid,
+			cleanup;
+
+		cleanup = () => {
+			if (timeoutid) clearTimeout(timeoutid);
+			document.removeEventListener(message_name, listener);
+			delete iframe.onerror;
+			delete iframe.onload;
+			document.body.removeChild(iframe);
+			document.body.removeChild(form);
+		};
+
+		listener = (event) => {
+			cleanup();
+
+			if (event.detail.status == "ok") {
+				resolve(event.detail.data);
+			}
+			else {
+				reject({ message: event.detail.status });
+			}
+		};
+
+		document.addEventListener(message_name, listener);
+
+		if (timeout) {
+			timeoutid = setTimeout(() => {
+				cleanup();
+				reject({ message: 'timeout' });
+			}, timeout);
+		}
+
+		form.submit();
+	});
+
+	return promise;
+}
+
+function send_with_script(path, data) {
 	let message_id = uuidv4();
 
 	let promise = new Promise(async (resolve, reject) => {
@@ -149,7 +229,7 @@ function send_json(path, data) {
 				done = true;
 
 				if (event.detail.status == "ok") {
-					resolve(event.detail);
+					resolve(event.detail.data);
 				}
 				else {
 					reject({ message: event.detail.status });
@@ -182,13 +262,19 @@ function send_json(path, data) {
 	return promise;
 }
 
+document.addEventListener('server_message', (ev) => {
+	if (ev.detail.data && ev.detail.data.type == 'broadcast') {
+		document.dispatchEvent(new CustomEvent('broadcast', { detail: ev.detail.data.payload }));
+	}
+});
+
 document.addEventListener('polled', (ev) => {
 	for (let message of ev.detail) {
 		if ('message_id' in message) {
-			document.dispatchEvent(new CustomEvent('message::' + message['message_id'], { detail: message.data }));
+			document.dispatchEvent(new CustomEvent('server_message::' + message['message_id'], { detail: message.data }));
 		}
 		else {
-			document.dispatchEvent(new CustomEvent('message', { detail: message }));
+			document.dispatchEvent(new CustomEvent('server_message', { detail: message }));
 			console.log('polled', message);
 		}
 	}
@@ -201,7 +287,7 @@ async function start_poll() {
 		do {
 			error = undefined;
 
-			await send_json('poll')
+			await send_with_script('poll')
 				.then(queue => {
 					document.dispatchEvent(new CustomEvent('polled', { detail: queue }));
 				})
@@ -216,44 +302,13 @@ async function start_poll() {
 
 			if (newurl != oldurl) {
 				server_url_promise = newurlpromise;
-				await send_json('ping').catch(err => { throw { message: 'Lost url', cause: err } });
+				await send_with_script('ping').catch(err => { throw { message: 'Lost url', cause: err } });
 			}
 			else {
 				throw { message: 'Lost url' };
 			}
 		}
 	}
-}
-
-function postRawData(url, data) {
-	let iframe = document.createElement('iframe');
-	iframe.name = uuidv4();
-	//iframe.style.display = 'none';
-	document.body.appendChild(iframe);
-
-	document.addEventListener('message', function (msg) {
-		console.log('iframe msg', msg);
-	});
-
-	let form = document.createElement('form');
-	form.method = 'POST';
-	form.action = url;
-	form.target = iframe.name;
-
-	for (let [k, v] of Object.entries(data)) {
-		let dataInput = document.createElement('input');
-		dataInput.type = 'hidden';
-		dataInput.name = k;
-		dataInput.value = (v && v instanceof Object) ? JSON.stringify(v) : v;
-		form.appendChild(dataInput);
-	}
-
-	document.body.appendChild(form);
-
-	form.submit();
-
-	//document.body.removeChild(iframe);
-	//document.body.removeChild(form);
 }
 
 async function loadApp(app) {

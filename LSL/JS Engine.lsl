@@ -80,17 +80,17 @@ broadcast(key from, string message)
     }
 }
 
-respond_with_ack(string http_id, string message_id)
+jsonp_ack(string http_id, string message_id)
 {
-    respond_to_request(http_id, llList2Json(JSON_OBJECT, [
+    jsonp_response(http_id, "ack", llList2Json(JSON_OBJECT, [
         "message_id", message_id,
         "status", "ok"
     ]));
 }
 
-respond_with_error(string http_id, string message_id, string message)
+jsonp_error(string http_id, string message_id, string message)
 {
-    respond_to_request(http_id, llList2Json(JSON_OBJECT, [
+    jsonp_response(http_id, "ack", llList2Json(JSON_OBJECT, [
         "message_id", message_id,
         "status", message
     ]));
@@ -103,7 +103,7 @@ string url;
 key url_request;
 
 string PUBLIC_URL_BASE = "https://devy-null.github.io/LSLJSE/";
-string PAGE = "devy-null:app-chat"; // app-hello-world
+string PAGE = "devy-null:app-chat";
 
 string get_token(key avatar)
 {
@@ -144,9 +144,9 @@ on_new_url(string url)
     ]), llGenerateKey());
 }
 
-respond_to_request(key request_id, string json)
+jsonp_response(key request_id, string name, string json)
 {
-    llHTTPResponse(request_id, 200, "<script>parent.postMessage(" + json + ",'*');</script>");
+    llHTTPResponse(request_id, 200, name + "(" + json + ")");
 }
 
 send_queue(key avatar)
@@ -159,13 +159,11 @@ send_queue(key avatar)
     
     string queue = llList2String(listener_queue, index + 3);
     if (queue == "[]") return;
-
-    respond_to_request(poll_id, llList2Json(JSON_OBJECT, [
-        "message_id", "poll",
-        "status", "ok",
-        "queue", queue
-    ]));
     
+    jsonp_response(poll_id, "poll_response", llList2Json(JSON_OBJECT, [
+        "status", "ok",
+        "data", queue
+    ]));
     listener_queue = llListReplaceList(listener_queue, [], index, index + 3);
 }
 
@@ -190,7 +188,7 @@ default
     {
         requestURL();
         llOwnerSay(get_public_url(llGetOwner()));
-        llOwnerSay(get_public_url(llGenerateKey()));
+        llOwnerSay(get_public_url("7449c8bf-28af-40f8-988e-785cbf20e20b"));
     }
     
     attach(key avatar) { if (avatar) requestURL(); }
@@ -235,27 +233,30 @@ default
         string app = llJsonGetValue(data, ["app"]);
         string avatar = llJsonGetValue(data, ["avatar"]);
         string token = llJsonGetValue(data, ["token"]);
-
+        
+        if (path == "/post")
+        {
+            llOwnerSay(llList2Json(JSON_OBJECT, [
+                "type", "http_request",
+                "id", id,
+                "method", method,
+                "body", body,
+                "path", path,
+                "raw_data", raw_data,
+                "data", data
+            ]));
+        }
+        else
+        {
+            llOwnerSay(path);
+        }
+        
         string message_id = llJsonGetValue(data, ["message_id"]);
         string message = llBase64ToString(llJsonGetValue(data, ["message"]));
-        
-        llOwnerSay(llList2Json(JSON_OBJECT, [
-            "type", "http_request",
-            "id", id,
-            "method", method,
-            "body", body,
-            "path", path,
-            "raw_data", raw_data,
-            "data", data,
-            "token", token,
-            "avatar", avatar,
-            "gettoken", get_token(avatar),
-            "message", message
-        ]));
-        
+
         if (token != get_token(avatar))
         {
-            respond_with_error(id, message_id, "Invalid token!");
+            jsonp_error(id, message_id, "Invalid token!");
             return;
         }
         
@@ -263,7 +264,7 @@ default
         {
             if (path == "/ping")
             {
-                respond_with_ack(id, message_id);
+                jsonp_ack(id, message_id);
             }
             else if (path == "/poll")
             {
@@ -271,7 +272,7 @@ default
             }
             else if (path == "/post")
             {
-                respond_with_ack(id, message_id);
+                llHTTPResponse(id, 200, "ok");
                 
                 string msg = "{}";
                 

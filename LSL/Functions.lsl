@@ -55,7 +55,7 @@ default
                 index++;
             }
 
-            respond(sensor_request, llList2Json(JSON_OBJECT, ["status", "ok", "value", llList2Json(JSON_ARRAY, arr)]));
+            respond(sensor_request, llList2Json(JSON_OBJECT, ["status", "ok", "data", llList2Json(JSON_ARRAY, arr)]));
             sensor_request = NULL_KEY;
         }
     }
@@ -64,7 +64,7 @@ default
     {
         if (sensor_request)
         {
-            respond(sensor_request, llList2Json(JSON_OBJECT, ["status", "ok", "value", llList2Json(JSON_ARRAY, [])]));
+            respond(sensor_request, llList2Json(JSON_OBJECT, ["status", "ok", "data", llList2Json(JSON_ARRAY, [])]));
             sensor_request = NULL_KEY;
         }
     }
@@ -85,35 +85,35 @@ default
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llGetAgentInfo(getJsonValueOrDefault(data, ["id"], llGetOwner()))
+                    "data", llGetAgentInfo(getJsonValueOrDefault(data, ["id"], llGetOwner()))
                 ]));
             }
             else if (type == "llKey2Name")
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llKey2Name(getJsonValueOrDefault(data, ["key"], llGetOwner()))
+                    "data", llKey2Name(getJsonValueOrDefault(data, ["key"], llGetOwner()))
                 ]));
             }
             else if (type == "llGetDisplayName")
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llGetDisplayName(getJsonValueOrDefault(data, ["key"], llGetOwner()))
+                    "data", llGetDisplayName(getJsonValueOrDefault(data, ["key"], llGetOwner()))
                 ]));
             }
             else if (type == "llGetObjectDetails")
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llList2Json(JSON_ARRAY,llGetObjectDetails(getJsonValueOrDefault(data, ["key"], llGetOwner()), llJson2List(llJsonGetValue(data, ["parameters"]))))
+                    "data", llList2Json(JSON_ARRAY,llGetObjectDetails(getJsonValueOrDefault(data, ["key"], llGetOwner()), llJson2List(llJsonGetValue(data, ["parameters"]))))
                 ]));
             }
             else if (type == "llGetAttachedList")
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llList2Json(JSON_ARRAY,llGetAttachedList(getJsonValueOrDefault(data, ["key"], llGetOwner())))
+                    "data", llList2Json(JSON_ARRAY,llGetAttachedList(getJsonValueOrDefault(data, ["key"], llGetOwner())))
                 ]));
             }
             else if (type == "llStartAnimation")
@@ -130,21 +130,21 @@ default
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llGetAnimation(getJsonValueOrDefault(data, ["key"], llGetOwner()))
+                    "data", llGetAnimation(getJsonValueOrDefault(data, ["key"], llGetOwner()))
                 ]));
             }
             else if (type == "llGetAnimationOverride")
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llGetAnimationOverride(llJsonGetValue(data, ["state"]))
+                    "data", llGetAnimationOverride(llJsonGetValue(data, ["state"]))
                 ]));
             }
             else if (type == "llGetAnimationList")
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llList2Json(JSON_ARRAY,llGetAnimationList(getJsonValueOrDefault(data, ["key"], llGetOwner())))
+                    "data", llList2Json(JSON_ARRAY,llGetAnimationList(getJsonValueOrDefault(data, ["key"], llGetOwner())))
                 ]));
             }
             else if (type == "llSay")
@@ -176,7 +176,7 @@ default
             {
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llList2Json(JSON_ARRAY, llGetLinkPrimitiveParams(
+                    "data", llList2Json(JSON_ARRAY, llGetLinkPrimitiveParams(
                         (integer)getJsonValueOrDefault(data, ["link"], (string)LINK_SET),
                         llJson2List(llJsonGetValue(data, ["parameters"]))
                     ))
@@ -215,7 +215,7 @@ default
                 
                 respond(str, llList2Json(JSON_OBJECT, [
                     "status", "ok",
-                    "value", llList2Json(JSON_ARRAY, llCastRay(start, end, llJson2List(llJsonGetValue(data, ["options"]))))
+                    "data", llList2Json(JSON_ARRAY, llCastRay(start, end, llJson2List(llJsonGetValue(data, ["options"]))))
                 ]));
             }
         }

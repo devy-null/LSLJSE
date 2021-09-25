@@ -87,7 +87,7 @@ default
             
             llListenRemove(llList2Integer(data, 4));
 
-            respond(llList2String(data, 2), llList2Json(JSON_OBJECT, ["status", "ok", "value", text]));
+            respond(llList2String(data, 2), llList2Json(JSON_OBJECT, ["status", "ok", "data", text]));
         }
     }
 
