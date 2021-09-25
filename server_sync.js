@@ -61,7 +61,7 @@ async function getURL() {
 	return records[0].values["cyW44jWODdUy7cNCorWPaD"];
 }
 
-let server_url_promise = getURL();
+let server_url_promise;
 
 async function getRLVRestrictions() {
 	return (await sendRLV('@getstatusall:;	')).split('	');
@@ -359,7 +359,7 @@ async function main() {
 		gitApp = (await getApps()).find(app => app.id == base_data['page']);
 
 		if (gitApp) {
-			let fetchedURL = await server_url_promise.catch(err => null);
+			let fetchedURL = await (server_url_promise = getURL()).catch(err => null);
 
 			if (fetchedURL) {
 				loadApp(gitApp);
