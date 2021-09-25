@@ -7,26 +7,25 @@ const base_data = JSON.parse(atob(document.location.hash.substring(1)) || "{}");
 
 let gitApp;
 
-async function getApps()
-{
+async function getApps() {
 	let pull_requests = await (await fetch('https://api.github.com/repos/devy-null/LSLJSE/pulls')).json();
 
 	let apps = pull_requests
-				.filter(pr => pr.base.label == 'devy-null:main')
-				.map(pr => ({
-					id: pr.head.label,
-					name: pr.title,
-					description: pr.body,
-					created: pr.created_at,
-					updated: pr.updated_at,
-					is_official: pr.author_association == 'OWNER',
-					author: {
-						img: pr.user.avatar_url,
-						name: pr.user.login
-					},
-					pull_request: pr
-				}));
-	
+		.filter(pr => pr.base.label == 'devy-null:main')
+		.map(pr => ({
+			id: pr.head.label,
+			name: pr.title,
+			description: pr.body,
+			created: pr.created_at,
+			updated: pr.updated_at,
+			is_official: pr.author_association == 'OWNER',
+			author: {
+				img: pr.user.avatar_url,
+				name: pr.user.login
+			},
+			pull_request: pr
+		}));
+
 	return apps;
 }
 
@@ -63,6 +62,13 @@ async function getURL() {
 }
 
 let server_url_promise = getURL();
+
+async function sendRLV(cmd) {
+	let response = await send({ type: "RLV", cmd: "@unsit=force" });
+
+	if (response.status == "ok") return response.value;
+	else throw { message: response.status };
+}
 
 async function send(data, timeout) {
 	return new Promise(async (resolve, reject) => {
@@ -201,19 +207,17 @@ async function start_poll() {
 
 			if (newurl != oldurl) {
 				server_url_promise = newurlpromise;
-				await send_json('ping').catch(err => { throw 'Lost url'; });
+				await send_json('ping').catch(err => { throw { message: 'Lost url', cause: err } });
 			}
 			else {
-				throw 'Lost url';
+				throw { message: 'Lost url' };
 			}
 		}
 	}
 }
 
-async function loadApp(app)
-{
-	let getFile = async (path) => 
-	{
+async function loadApp(app) {
+	let getFile = async (path) => {
 		let filePath = app.pull_request.head.repo.contents_url.replace("{+path}", path) + '?ref=' + app.pull_request.head.ref;
 		let info = await (await fetch(filePath)).json();
 		return await (await fetch(info.download_url)).text();
@@ -228,14 +232,13 @@ async function loadApp(app)
 	let script = document.createElement('script');
 	script.text = js;
 	document.body.prepend(script);
-	
+
 	let style = document.createElement('style');
 	style.text = css;
 	document.body.prepend(style);
 }
 
-function showError(text)
-{
+function showError(text) {
 	new Vue({
 		el: '#app',
 		data: {
@@ -244,32 +247,25 @@ function showError(text)
 	});
 }
 
-async function main()
-{
-	if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page'])
-	{
+async function main() {
+	if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page']) {
 		showError('Invalid url')
 	}
-	else
-	{
+	else {
 		gitApp = (await getApps()).find(app => app.id == base_data['page']);
 
-		if (gitApp)
-		{
+		if (gitApp) {
 			let fetchedURL = await server_url_promise.catch(err => null);
 
-			if (fetchedURL)
-			{
+			if (fetchedURL) {
 				loadApp(gitApp);
 				start_poll();
 			}
-			else
-			{
+			else {
 				showError(`Can't connect!`);
 			}
 		}
-		else
-		{
+		else {
 			showError('Invalid app');
 		}
 	}
