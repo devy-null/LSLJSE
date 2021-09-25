@@ -64,7 +64,7 @@ async function getURL() {
 let server_url_promise = getURL();
 
 async function sendRLV(cmd) {
-	let response = await send({ type: "RLV", cmd: "@unsit=force" });
+	let response = await send({ type: "RLV", cmd: cmd });
 
 	if (response.status == "ok") return response.value;
 	else throw { message: response.status };
