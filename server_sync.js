@@ -232,7 +232,7 @@ async function loadApp(app) {
 		let downloadPath;
 
 		if (new URL(location).searchParams.get('localhost') == 'true') {
-			downloadPath = `http://127.0.0.1:8080/${path}`;
+			downloadPath = `http://127.0.0.1:8080/App/${path}`;
 		}
 		else {
 			let filePath = app.pull_request.head.repo.contents_url.replace("{+path}", path) + '?ref=' + app.pull_request.head.ref;

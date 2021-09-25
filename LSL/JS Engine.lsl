@@ -80,6 +80,22 @@ broadcast(key from, string message)
     }
 }
 
+jsonp_ack(string http_id, string message_id)
+{
+    jsonp_response(http_id, "ack", llList2Json(JSON_OBJECT, [
+        "message_id", message_id,
+        "status", "ok"
+    ]));
+}
+
+jsonp_error(string http_id, string message_id, string message)
+{
+    jsonp_response(http_id, "ack", llList2Json(JSON_OBJECT, [
+        "message_id", message_id,
+        "status", message
+    ]));
+}
+
 list queue = [/* target, time, json */];
 key current_poll;
 
@@ -121,7 +137,11 @@ on_new_url(string url)
         listener_queue = llListReplaceList(listener_queue, [NULL_KEY], (i - 1) * 4 + 1, (i - 1) * 4 + 1);
     }
     
-    llMessageLinked(LINK_THIS, CHAN_URL_TRACKER, llList2Json(JSON_OBJECT, ["type", "set", "key", llGetKey(), "value", url]), llGenerateKey());
+    llMessageLinked(LINK_THIS, CHAN_URL_TRACKER, llList2Json(JSON_OBJECT, [
+        "type", "set",
+        "key", llGetKey(),
+        "value", url
+    ]), llGenerateKey());
 }
 
 jsonp_response(key request_id, string name, string json)
@@ -212,7 +232,7 @@ default
         
         if (token != get_token(avatar))
         {
-            llHTTPResponse(id, 401, "Invalid token!");
+            jsonp_error(id, message_id, "Invalid token!");
             return;
         }
         
@@ -223,7 +243,7 @@ default
         {
             if (path == "/ping")
             {
-                jsonp_response(id, "ack", llJsonSetValue("{}", ["message_id"], message_id));
+                jsonp_ack(id, message_id);
             }
             else if (path == "/poll")
             {
@@ -231,7 +251,7 @@ default
             }
             else if (path == "/post")
             {
-                jsonp_response(id, "ack", llJsonSetValue("{}", ["message_id"], message_id));
+                jsonp_ack(id, message_id);
                 
                 string msg = "{}";
                 
