@@ -1,6 +1,7 @@
 var app = new Vue({
   el: '#app',
   data: {
-    message: 'Hello Vue!'
+    target: '',
+    restrictions: ["a", "b"]
   }
 });
