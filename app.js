@@ -17,7 +17,7 @@ var app = new Vue({
       }
     });
 
-    send({ type: 'llGetDisplayName', key: base_data['avatar'] }).then(name => this.name = name);
+    NameLookup.Instance.lookup(base_data['avatar']).then(name => this.name = name);
   },
   methods: {
     sendMessage: function () {
