@@ -102,6 +102,9 @@ key current_poll;
 string url;
 key url_request;
 
+// llRequestURL / llRequestSecureURL
+#define GetURL llRequestSecureURL
+
 string PUBLIC_URL_BASE = "https://devy-null.github.io/LSLJSE/";
 string PAGE = "devy-null:app-chat";
 
@@ -125,7 +128,7 @@ requestURL()
 {
     if (url) llReleaseURL(url);
     url = "";
-    url_request = llRequestSecureURL();
+    url_request = GetURL();
 }
 
 on_new_url(string url)
@@ -199,7 +202,7 @@ default
     {
         if (num == CHAN_SERVER_QUEUE)
         {
-            enqueue_data_for_avatar(id, str);
+            enqueue_data(id, str);
         }
         else if (num == CHAN_PRINT_QUEUE)
         {

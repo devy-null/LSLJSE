@@ -13,3 +13,15 @@ respond(string request, string json)
     
     llMessageLinked(LINK_THIS, CHAN_SERVER_QUEUE, llList2Json(JSON_OBJECT, ["message_id", message_id, "data", json]), avatar);
 }
+
+emit(string json, key avatar)
+{   
+    llMessageLinked(LINK_THIS, CHAN_SERVER_QUEUE, llList2Json(JSON_OBJECT, ["data", json]), avatar);
+}
+
+string getJsonValueOrDefault(string json, list selector, string defaultvalue)
+{
+    string value = llJsonGetValue(json, selector);
+    if (value == JSON_INVALID) value = defaultvalue;
+    return value;
+}

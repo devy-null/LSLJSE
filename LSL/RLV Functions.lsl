@@ -93,31 +93,35 @@ default
 
     link_message(integer sender_num, integer num, string str, key id)
     {
-        if (num == CHAN_SERVER_POST)
+        if (num == 0)
+        {
+            if (str == "reset") llResetScript();
+        }
+        else if (num == CHAN_SERVER_POST)
         {
             string message_id = llJsonGetValue(str, ["message_id"]);
             key avatar = (key)llJsonGetValue(str, ["avatar"]);
             string data = llJsonGetValue(str, ["data"]);
             
-            if (avatar == llGetOwner()) // ?
+            if (llJsonGetValue(data, ["type"]) == "RLV")
             {
-                if (llJsonGetValue(data, ["type"]) == "RLV")
+                string cmd = llJsonGetValue(data, ["cmd"]);
+                
+                list segments = llParseStringKeepNulls(cmd, [], ["@", "=", ":"]);
+                
+                if (llList2List(segments, 0, 1) == ["", "@"])
                 {
-                    string cmd = llJsonGetValue(data, ["cmd"]);
-                    
-                    list segments = llParseStringKeepNulls(cmd, [], ["@", "=", ":"]);
-                    
-                    if (llList2List(segments, 0, 1) == ["", "@"])
+                    if (llListFindList(callbackables, [llList2String(segments, 2)]) != -1)
                     {
-                        if (llListFindList(callbackables, [llList2String(segments, 2)]) != -1)
-                        {
-                            initCallback(id, cmd, str);
-                        }
-                        else
-                        {
-                            llOwnerSay(cmd);
-                            ack(str);
-                        }
+                        initCallback(id, cmd, str);
+                    }
+                    else
+                    {
+                        llOwnerSay(cmd);
+
+                        respond(str, llList2Json(JSON_OBJECT, [
+                            "status", "ok"
+                        ]));
                     }
                 }
             }

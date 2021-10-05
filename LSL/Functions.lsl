@@ -71,7 +71,11 @@ default
 
     link_message(integer sender_num, integer num, string str, key id)
     {
-        if (num == CHAN_SERVER_POST)
+        if (num == 0)
+        {
+            if (str == "reset") llResetScript();
+        }
+        else if (num == CHAN_SERVER_POST)
         {
             string message_id = llJsonGetValue(str, ["message_id"]);
             key avatar = (key)llJsonGetValue(str, ["avatar"]);
