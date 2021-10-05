@@ -8,7 +8,13 @@ const base_data = JSON.parse(atob(document.location.hash.substring(1)) || "{}");
 let gitApp;
 
 async function getApps() {
-	let pull_requests = await (await fetch('https://api.github.com/repos/devy-null/LSLJSE/pulls')).json();
+	let downloadPath = 'https://api.github.com/repos/devy-null/LSLJSE/pulls';
+
+	if (new URL(location).searchParams.get('localhost') == 'true') {
+		downloadPath = `http://127.0.0.1:8080/mock_apps.json`;
+	}
+
+	let pull_requests = await (await fetch(downloadPath)).json();
 
 	let apps = pull_requests
 		.filter(pr => pr.base.label == 'devy-null:main')
@@ -68,41 +74,11 @@ async function getRLVRestrictions() {
 }
 
 async function sendRLV(cmd) {
-	let response = await send({ type: "RLV", cmd: cmd });
-
-	if (response.status == "ok") return response.value;
-	else throw { message: response.status };
+	return await send({ type: "RLV", cmd: cmd });
 }
 
 async function send(data, timeout) {
 	return send_with_iframe('post', data, timeout);
-	/*
-	return new Promise(async (resolve, reject) => {
-		let { message_id } = await send_with_script('post', data);
-		let key = 'message::' + message_id;
-		let listener;
-		let timeoutid;
-
-		let cleanup = () => {
-			document.removeEventListener(key, listener);
-			if (timeoutid) clearTimeout(timeoutid);
-		};
-
-		listener = (ev) => {
-			cleanup();
-			resolve(ev.detail);
-		};
-
-		if (timeout) {
-			setTimeout(() => {
-				cleanup();
-				reject({ cause: 'timeout' });
-			}, timeout);
-		}
-
-		document.addEventListener(key, listener);
-	});
-	*/
 }
 
 function send_with_iframe(path, data, timeout) {
@@ -263,8 +239,29 @@ function send_with_script(path, data) {
 }
 
 document.addEventListener('server_message', (ev) => {
-	if (ev.detail.data && ev.detail.data.type == 'broadcast') {
-		document.dispatchEvent(new CustomEvent('broadcast', { detail: ev.detail.data.payload }));
+	if (ev.detail.data) {
+		let data = ev.detail.data,
+			type = data.type;
+
+		if (type == 'broadcast') {
+			document.dispatchEvent(new CustomEvent('broadcast', { detail: data.payload }));
+		}
+		else if (type == 'chat') {
+			document.dispatchEvent(new CustomEvent('SLChat', { detail: data }));
+		}
+		else if (type == 'control') {
+			let level = data.level;
+			let edge = data.edge;
+
+			let start = level & edge;
+			let end = ~level & edge;
+			let held = level & ~edge;
+			let untouched = ~(level | edge);
+
+			if (end & (CONTROL_LBUTTON | CONTROL_ML_LBUTTON)) {
+				document.dispatchEvent(new CustomEvent('SLMouseClick'));
+			}
+		}
 	}
 });
 
@@ -351,6 +348,12 @@ function showError(text) {
 	});
 }
 
+let _setInitDone;
+
+const init = new Promise((resolve, reject) => {
+	_setInitDone = resolve;
+});
+
 async function main() {
 	if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page']) {
 		showError('Invalid url')
@@ -362,8 +365,10 @@ async function main() {
 			let fetchedURL = await (server_url_promise = getURL()).catch(err => null);
 
 			if (fetchedURL) {
-				loadApp(gitApp);
+				await loadApp(gitApp);
 				start_poll();
+				_setInitDone();
+				delete _setInitDone;
 			}
 			else {
 				showError(`Can't connect!`);
