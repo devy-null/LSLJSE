@@ -28,13 +28,6 @@ list callbackables = [
     "getgroup"
 ];
 
-string getJsonValueOrDefault(string json, list selector, string defaultvalue)
-{
-    string value = llJsonGetValue(json, selector);
-    if (value == JSON_INVALID) value = defaultvalue;
-    return value;
-}
-
 initCallback(key id, string cmd, string request)
 {
     integer channel = (integer)llFrand(89999.0) + 10000;
