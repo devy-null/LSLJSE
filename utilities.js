@@ -135,6 +135,64 @@ class RLVNotifyListener extends ChatListener {
     }
 }
 
+class Cache {
+    name;
+    data;
+
+    constructor(name) {
+        this.name = name;
+        this.data = JSON.parse(localStorage.getItem(this.name) || '{}');
+    }
+
+    async clear() {
+        this.data = {};
+    }
+
+    async haveKey(key) {
+        return key in this.data;
+    }
+
+    async setItem(key, value) {
+        this.data[key] = value;
+        localStorage.setItem(this.name, JSON.stringify(this.data));
+    }
+
+    async getItem(key) {
+        return this.data[key];
+    }
+
+    getIfCached(key) {
+        return this.data[key];
+    }
+
+    async getOrFetch(key, fetcher) {
+        if (!(await this.haveKey(key))) await this.setItem(key, await fetcher());
+        return await this.getItem(key);
+    }
+}
+
+class NameLookup {
+    static Instance = new NameLookup();
+
+    cache;
+
+    constructor() {
+        this.cache = new Cache('NameLookup');
+    }
+
+    async clear() {
+        await this.cache.clear();
+    }
+
+    quickLookup(key) {
+        return this.cache.getIfCached(key);
+    }
+
+    async lookup(key) {
+        return await this.cache.getOrFetch(key, async () => await send({ type: 'llRequestDisplayName', key: key }).catch((err) => "(???).(???)"));
+    }
+}
+
 /*
 class ClickableLink
 {
