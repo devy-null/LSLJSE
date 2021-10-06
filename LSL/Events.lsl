@@ -28,7 +28,7 @@ unregister_listener(key id)
         integer channel = llList2Integer(chatlisteners, index + 1);
         chatlisteners = llListReplaceList(chatlisteners, [], index - 1, index + 2);
         
-        if (llListFindList(llList2ListStrided(llList2List(chatlisteners, 1, -1), 0, -1, 4), [channel]) == -1)
+        if (llListFindList(llList2ListStrided(llList2List(chatlisteners, 2, -1), 0, -1, 4), [channel]) == -1)
         {
             integer controlindex = llListFindList(llList2ListStrided(chatcontrol, 0, -1, 2), [channel]);
             llListenRemove(llList2Integer(chatcontrol, controlindex * 2 + 1));
@@ -138,7 +138,7 @@ default
         while (index >= 0)
         {
             integer listening_chan = llList2Integer(chatlisteners, index + 2);
-            key avatar = llList2Key(chatlisteners, index + 4);
+            key avatar = llList2Key(chatlisteners, index + 3);
 
             if (chan == listening_chan)
             {
