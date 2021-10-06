@@ -1,0 +1,12 @@
+<div id="app">
+  <div>{{ name }}</div>
+  <lable>
+  Message <input type="text" v-model="message" />
+  </lable>
+  <button v-on:click="sendMessage">Send</button>
+  <div>
+    <div v-for="message in messages" :key="message.id">
+      <span>{{ message.author }}</span>: <span>{{ message.text }}</span>
+    </div>
+  </div>
+</div>
