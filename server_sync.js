@@ -77,14 +77,6 @@ async function getURL() {
 
 let server_url_promise;
 
-async function getRLVRestrictions() {
-	return (await sendRLV('@getstatusall:;	')).split('	');
-}
-
-async function sendRLV(cmd) {
-	return await send({ type: "RLV", cmd: cmd });
-}
-
 async function send(data, timeout) {
 	return send_with_iframe('post', data, timeout);
 }

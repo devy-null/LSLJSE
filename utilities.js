@@ -1,3 +1,33 @@
+async function getRLVRestrictions() {
+    let local_restrictions = (await sendRLV('@getstatus:;	')).split('	');
+    let blocked_restrictions = (await sendRLV('@getstatusall:;	')).split('	');
+
+    let rlvcmdregex = /^(?<cmd>.*?)(?::(?<option>.*))?$/i;
+
+    return blocked_restrictions.reduce((total, restriction) => {
+      let match = rlvcmdregex.exec(restriction);
+      let obj = total[match.groups['cmd']] = total[match.groups['cmd']] || {};
+
+      if (match.groups['option']) {
+        let options = obj['options'] = obj['options'] || [];
+        options.push({
+          value: match.groups['option'],
+          local: local_restrictions.includes(restriction),
+          another: !local_restrictions.includes(restriction) || blocked_restrictions.reduce((tot, r) => tot + (r == restriction ? 1 : 0), 0) != 1
+        })
+      } else {
+        obj.active = true;
+        obj.local = local_restrictions.includes(restriction);
+        obj.another = !local_restrictions.includes(restriction) || blocked_restrictions.reduce((tot, r) => tot + (r == restriction ? 1 : 0), 0) != 1;
+      }
+
+      return total;
+    }, {});
+}
+
+async function sendRLV(cmd) {
+    return await send({ type: "RLV", cmd: cmd });
+}
 class ChatListener {
     constructor(sessionid, channel, filter) {
         this.sessionid = sessionid;
