@@ -2,14 +2,31 @@
 
 integer AUTO_PERMISSIONS;
 
-string getJsonValueOrDefault(string json, list selector, string defaultvalue)
-{
-    string value = llJsonGetValue(json, selector);
-    if (value == JSON_INVALID) value = defaultvalue;
-    return value;
-}
-
 string sensor_request = NULL_KEY;
+
+list dataserver_requests = [/* query_id, request_id, time */];
+
+dataserver_cleanup()
+{
+    integer index = llGetListLength(dataserver_requests) / 3 - 1;
+    
+    if (index == -1) return;
+    
+    integer expires_after = llGetUnixTime() - 30;
+    
+    while (index >= 0)
+    {
+        integer time = llList2Integer(dataserver_requests, index * 3 + 2);
+        
+        if (time < expires_after)
+        {
+            respond(llList2String(dataserver_requests, index * 3 + 1), llList2Json(JSON_OBJECT, ["status", "timeout"]));
+            dataserver_requests = llListReplaceList(dataserver_requests, [], index * 3, index * 3 + 2);
+        }
+        
+        index--;   
+    }
+}
 
 default
 {
@@ -23,6 +40,12 @@ default
             PERMISSION_OVERRIDE_ANIMATIONS;
         
         llRequestPermissions(llGetOwner(), AUTO_PERMISSIONS);
+        llSetTimerEvent(10);
+    }
+
+    timer()
+    {
+        dataserver_cleanup();
     }
     
     run_time_permissions(integer perm)
@@ -69,6 +92,17 @@ default
         }
     }
 
+    dataserver(key queryId, string data)
+    {
+        integer index = llListFindList(dataserver_requests, [queryId]);
+
+        if (index != -1)
+        {
+            respond(llList2String(dataserver_requests, index + 1), llList2Json(JSON_OBJECT, ["status", "ok", "data", data]));
+            dataserver_requests = llListReplaceList(dataserver_requests, [], index, index + 2);
+        }
+    }
+
     link_message(integer sender_num, integer num, string str, key id)
     {
         if (num == 0)
@@ -105,6 +139,9 @@ default
                     "status", "ok",
                     "data", llGetDisplayName(getJsonValueOrDefault(data, ["key"], llGetOwner()))
                 ]));
+            }
+            else if (type == "llRequestDisplayName") {
+                dataserver_requests += [llRequestDisplayName(llJsonGetValue(data, ["key"])), str, llGetUnixTime()];
             }
             else if (type == "llGetObjectDetails")
             {
