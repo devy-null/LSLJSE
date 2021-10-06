@@ -28,6 +28,44 @@ async function getRLVRestrictions() {
 async function sendRLV(cmd) {
     return await send({ type: "RLV", cmd: cmd });
 }
+
+class AvatarRestrictions {
+    // remember recvchat_sec
+    recvchat; // exception
+    recvchatfrom; // block
+
+    // remember recvemote_sec
+    recvemote; // exception
+    recvemotefrom; // block
+
+    // remember sendim_sec
+    sendim; // exception
+    sendimto; // block
+
+    startim; // exception
+    startimto; // block
+
+    // remember recvim_sec
+    recvim; // exception
+    recvimfrom; // block
+
+    // remember tplure_sec
+    tplure; // exception
+
+    accepttp; // auto
+    accepttprequest; // auto
+
+    // remember tprequest_sec
+    tprequest; // exception
+
+    share; // exception
+
+    touchattachother; // block
+
+    // remember shownames_sec
+    shownames; // exception
+}
+
 class ChatListener {
     constructor(sessionid, channel, filter) {
         this.sessionid = sessionid;
