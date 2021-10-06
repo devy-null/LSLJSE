@@ -1,8 +1,18 @@
 <div id="app">
-  <div><span>Taget: </span>{{ target }}</div>
+  <v-app>
+    <v-main>
+      <v-switch v-model="show_only_active_restrictions" :label="`Show only active restrictions`"></v-switch>
+      <div>
+        <restriction
+          v-for="item in restrictions"
+          v-bind:restriction="item"
+          
+          v-if="!show_only_active_restrictions || item.active"
 
-  <div>
-    <div :v-for="let restriction of restrictions">{{ restriction }}</div>
-  </div>
-  {{ message }}
+          v-on:action="loadRestrictions"
+
+          ></restriction>
+      </div>
+    <v-main>
+  </v-app>
 </div>
