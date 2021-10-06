@@ -78,10 +78,10 @@ async function getURL() {
 let server_url_promise;
 
 async function send(data, timeout) {
-	return send_with_iframe('post', data, timeout);
+	return await send_with_iframe('post', data, timeout);
 }
 
-function send_with_iframe(path, data, timeout) {
+async function send_with_iframe(path, data, timeout) {
 	let message_id = uuidv4();
 
 	if (path == "poll") message_id = "poll";
@@ -158,7 +158,7 @@ function send_with_iframe(path, data, timeout) {
 	return promise;
 }
 
-function send_with_script(path, data) {
+async function send_with_script(path, data) {
 	let message_id = uuidv4();
 
 	let promise = new Promise(async (resolve, reject) => {
@@ -328,7 +328,9 @@ async function loadApp(app) {
 	let css = await getFile('app.css');
 	let js = await getFile('app.js');
 
-	document.body.innerHTML = html;
+	let target = document.getElementById('app');
+
+	target.innerHTML = html;
 
 	let script = document.createElement('script');
 	script.text = js;
