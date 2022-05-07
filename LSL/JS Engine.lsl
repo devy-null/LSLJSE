@@ -133,6 +133,8 @@ requestURL()
 
 on_new_url(string url)
 {
+    url = new_url;
+
     integer i = llGetListLength(listener_queue) / QUEUE_LENGTH;
     
     for (i; i > 0; i--)
@@ -140,7 +142,7 @@ on_new_url(string url)
         listener_queue = llListReplaceList(listener_queue, [NULL_KEY], (i - 1) * QUEUE_LENGTH + QUEUE_POLL, (i - 1) * QUEUE_LENGTH + QUEUE_POLL);
     }
 
-    llOwnerSay(get_public_url(llGetOwner()));
+    string public_url = get_public_url(llGetOwner());
     
     llMessageLinked(LINK_THIS, CHAN_URL_TRACKER, llList2Json(JSON_OBJECT, [
         "type", "set",
