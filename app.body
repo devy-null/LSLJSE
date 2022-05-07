@@ -1,0 +1,19 @@
+<div id="app">
+  <v-app>
+    <v-main>
+      <v-container text-h2 text-center>Target: {{target_name}}</v-container>
+      <v-container text-h3 text-center>Operator: {{avatar_name}}</v-container>
+      <v-switch v-model="show_only_active_restrictions" :label="`Show only active restrictions`"></v-switch>
+      <v-btn color="primary" text @click="clear">Clear all</v-btn>
+      <div>
+        <restriction
+          v-for="item in restrictions" :key="item.cmd"
+          v-bind:restriction="item"
+          
+          v-if="!show_only_active_restrictions || item.active"
+
+          ></restriction>
+      </div>
+    <v-main>
+  </v-app>
+</div>
