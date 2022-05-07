@@ -342,9 +342,14 @@ var app = new Vue({
     show_only_active_restrictions: false,
     restrictions: [],
     avatar_key: '',
-    avatar_name: ''
+    avatar_name: '',
+    target_key: '',
+    target_name: ''
   }),
   async created() {
+    this.target_key = base_data['target'];
+    this.target_name = await NameLookup.Instance.lookup(this.target_key);
+
     this.avatar_key = base_data['avatar'];
     this.avatar_name = await NameLookup.Instance.lookup(this.avatar_key);
   },

@@ -1,7 +1,8 @@
 <div id="app">
   <v-app>
     <v-main>
-      <v-container text-h1 text-center>{{avatar_name}}</v-container>
+      <v-container text-h2 text-center>Target: {{target_name}}</v-container>
+      <v-container text-h3 text-center>Operator: {{avatar_name}}</v-container>
       <v-switch v-model="show_only_active_restrictions" :label="`Show only active restrictions`"></v-switch>
       <v-btn color="primary" text @click="clear">Clear all</v-btn>
       <div>
