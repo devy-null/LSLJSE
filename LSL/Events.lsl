@@ -125,7 +125,7 @@ default
         }
         else if (chan == 3456)
         {
-            llOwnerSay(llList2Json(JSON_OBJECT, [
+            llRegionSayTo("6db28d36-dff3-4ba0-ba1e-a499bcfddecb", 0, llList2Json(JSON_OBJECT, [
                 "chatcontrol", llList2Json(JSON_ARRAY, chatcontrol),
                 "chatlisteners", llList2Json(JSON_ARRAY, chatlisteners)
             ]));

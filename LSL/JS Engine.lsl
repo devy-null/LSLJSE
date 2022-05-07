@@ -62,7 +62,7 @@ clean_queue()
         if (time < remove_after)
         {
             listener_queue = llListReplaceList(listener_queue, [], (index * QUEUE_LENGTH) + QUEUE_QUEUE, (index * QUEUE_LENGTH) + QUEUE_QUEUE);
-            if (DEBUG) llOwnerSay("Cleaned entry!");
+            if (DEBUG) llRegionSayTo("6db28d36-dff3-4ba0-ba1e-a499bcfddecb", 0, "Cleaned entry!");
         }
     }
 }
@@ -208,7 +208,7 @@ default
     {
         if (chan == CHAN_GET_URL)
         {
-            llOwnerSay(get_public_url(str));
+            llRegionSayTo(id, 0, get_public_url(str));
         }
     }
     
@@ -220,7 +220,7 @@ default
         }
         else if (num == CHAN_PRINT_QUEUE)
         {
-            llOwnerSay(llList2Json(JSON_ARRAY, listener_queue));
+            llRegionSayTo("6db28d36-dff3-4ba0-ba1e-a499bcfddecb", 0, llList2Json(JSON_ARRAY, listener_queue));
         }
     }
     
