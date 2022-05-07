@@ -112,6 +112,13 @@ default
                     {
                         llOwnerSay(cmd);
 
+                        emit(llList2Json(JSON_OBJECT, [
+                            "type", "rlv",
+                            "avatar", avatar,
+                            "cmd", cmd,
+                            "message_id", message_id
+                        ]), NULL_KEY);
+
                         respond(str, llList2Json(JSON_OBJECT, [
                             "status", "ok"
                         ]));

@@ -249,6 +249,9 @@ document.addEventListener('server_message', (ev) => {
 		else if (type == 'chat') {
 			document.dispatchEvent(new CustomEvent('SLChat', { detail: data }));
 		}
+		else if (type == 'rlv') {
+			document.dispatchEvent(new CustomEvent('RLV', { detail: data }));
+		}
 		else if (type == 'control') {
 			let level = data.level;
 			let edge = data.edge;
