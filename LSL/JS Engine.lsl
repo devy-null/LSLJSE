@@ -131,7 +131,7 @@ requestURL()
     url_request = GetURL();
 }
 
-on_new_url(string url)
+on_new_url(string new_url)
 {
     url = new_url;
 
@@ -143,6 +143,19 @@ on_new_url(string url)
     }
 
     string public_url = get_public_url(llGetOwner());
+
+    llOwnerSay(public_url);
+
+    /*
+    llSetLinkMedia(LINK_THIS, 4, [
+        PRIM_MEDIA_HOME_URL, public_url,
+        PRIM_MEDIA_CURRENT_URL, public_url,
+        PRIM_MEDIA_AUTO_PLAY, TRUE,
+        PRIM_MEDIA_HEIGHT_PIXELS, 512,
+        PRIM_MEDIA_WIDTH_PIXELS, 512,
+        PRIM_MEDIA_PERMS_CONTROL, PRIM_MEDIA_PERM_OWNER
+    ]);
+    */
     
     llMessageLinked(LINK_THIS, CHAN_URL_TRACKER, llList2Json(JSON_OBJECT, [
         "type", "set",
