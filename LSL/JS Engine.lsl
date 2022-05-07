@@ -12,6 +12,9 @@ integer timeout = 15;
 
 integer DEBUG = TRUE;
 
+string PUBLIC_URL_BASE = "https://devy-null.github.io/LSLJSE/";
+string PAGE = "devy-null:app-rlv-status"; // "devy-null:app-chat"
+
 enqueue_data(key avatar, string json)
 {
     if (avatar == NULL_KEY)
@@ -105,9 +108,6 @@ key url_request;
 
 // llRequestURL / llRequestSecureURL
 #define GetURL llRequestSecureURL
-
-string PUBLIC_URL_BASE = "https://devy-null.github.io/LSLJSE/";
-string PAGE = "devy-null:app-chat";
 
 string get_token(key avatar)
 {
