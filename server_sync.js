@@ -384,7 +384,7 @@ async function prepareApp() {
 
 async function main() {
 	await prepareApp()
-		.then(async app => {
+		.then(async gitApp => {
 			let fetchedURL = await(server_url_promise = getURL()).catch(err => null);
 
 			if (fetchedURL) {
