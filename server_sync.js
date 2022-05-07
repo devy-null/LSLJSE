@@ -12,6 +12,7 @@ async function Waiter(time) {
 }
 
 const base_data = JSON.parse(atob(document.location.hash.substring(1)) || "{}");
+const session = uuidv4();
 
 let gitApp;
 
@@ -95,7 +96,8 @@ async function send_with_iframe(path, data, timeout) {
 			message: btoa(JSON.stringify(data || {})),
 			app: base_data['app'],
 			avatar: base_data['avatar'],
-			token: base_data['token']
+			token: base_data['token'],
+			session: session
 		};
 
 		let iframe = document.createElement('iframe');
@@ -174,6 +176,8 @@ async function send_with_script(path, data) {
 		src.searchParams.set('app', base_data['app']);
 		src.searchParams.set('avatar', base_data['avatar']);
 		src.searchParams.set('token', base_data['token']);
+
+		src.searchParams.set('session', session);
 
 		let script = document.createElement('script');
 		script.type = 'text/javascript';

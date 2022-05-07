@@ -7,7 +7,15 @@ integer CHAN_GET_URL = -6343567;
 
 integer NONCE = 453453;
 
-list listener_queue = [/* avatar, poll_id, time, queue */];
+list listener_queue = [/* avatar, session_id, poll_id, time, queue */];
+integer QUEUE_AVATAR = 0;
+integer QUEUE_SESSION = 1;
+integer QUEUE_POLL = 2;
+integer QUEUE_TIME = 3;
+integer QUEUE_QUEUE = 4;
+integer QUEUE_END = 4;
+integer QUEUE_LENGTH = 5;
+
 integer timeout = 15;
 
 integer DEBUG = TRUE;
@@ -15,71 +23,62 @@ integer DEBUG = TRUE;
 string PUBLIC_URL_BASE = "https://devy-null.github.io/LSLJSE/";
 string PAGE = "devy-null:app-rlv-status"; // "devy-null:app-chat"
 
-enqueue_data(key avatar, string json)
-{
-    if (avatar == NULL_KEY)
-    {
-        integer index = llGetListLength(listener_queue) / 4;
-        
-        while (index-- > 0)
-        {
-            enqueue_data_for_avatar(llList2Key(listener_queue, index * 4), json);
-        }
-    }
-    else
-    {
-        enqueue_data_for_avatar(avatar, json);
-    }
+#define foreach(array, variablename, indexname, stride, body){\
+integer indexname = llGetListLength(array) / stride;\
+for (indexname -= 1; indexname >= 0; indexname--) {\
+list variablename = llList2List(array, indexname * stride, (indexname + 1) * stride);\
+body;\
+}\
 }
 
-enqueue_data_for_avatar(key avatar, string json)
+enqueue_data(key avatar, key session, string json)
 {
-    integer index = llListFindList(listener_queue, [avatar]);
-    
-    if (index == -1)
-    {
-        listener_queue += [avatar, NULL_KEY, llGetUnixTime(), llList2Json(JSON_ARRAY, [json])];
-    }
-    else
-    {
-        string queue = llList2String(listener_queue, index + 3);
-        queue = llJsonSetValue(queue, [-1], json);
+    foreach(listener_queue, item, index, QUEUE_LENGTH,
+        if (avatar == NULL_KEY || llList2Key(item, QUEUE_AVATAR) == avatar)
+        {
+            if (session == NULL_KEY || llList2Key(item, QUEUE_SESSION) == session)
+            {
+                string queue = llList2String(item, QUEUE_QUEUE);
+                queue = llJsonSetValue(queue, [-1], json);
 
-        listener_queue = llListReplaceList(listener_queue, [queue], index + 3, index + 3);
-        
-        send_queue(avatar);
-    }
+                listener_queue = llListReplaceList(listener_queue, [queue], index * QUEUE_LENGTH + QUEUE_QUEUE, index * QUEUE_LENGTH + QUEUE_QUEUE);
+                
+                send_queue_for_session(llList2Key(item, QUEUE_SESSION));
+            }
+        }
+    )
 }
 
 clean_queue()
 {
-    integer index = llGetListLength(listener_queue) / 4;
+    integer index = llGetListLength(listener_queue) / QUEUE_LENGTH;
     
     integer remove_after = llGetUnixTime() - timeout;
     
     while (index-- > 0)
     {
-        integer time = llList2Integer(listener_queue, (index * 4) + 2);
+        integer time = llList2Integer(listener_queue, (index * QUEUE_LENGTH) + QUEUE_TIME);
         
         if (time < remove_after)
         {
-            listener_queue = llListReplaceList(listener_queue, [], (index * 4) + 3, (index * 4) + 3);
+            listener_queue = llListReplaceList(listener_queue, [], (index * QUEUE_LENGTH) + QUEUE_QUEUE, (index * QUEUE_LENGTH) + QUEUE_QUEUE);
             if (DEBUG) llOwnerSay("Cleaned entry!");
         }
     }
 }
 
-broadcast(key from, string message, integer exclusive)
+broadcast(key from, key session, string message, integer exclusive)
 {
-    integer index = llGetListLength(listener_queue) / 4;
+    integer index = llGetListLength(listener_queue) / QUEUE_LENGTH;
     
     while (index-- > 0)
     {
-        key avatar = llList2Key(listener_queue, (index * 4));
+        key avatar = llList2Key(listener_queue, (index * QUEUE_LENGTH) + QUEUE_AVATAR);
+        key session_key = llList2Key(listener_queue, (index * QUEUE_LENGTH) + QUEUE_AVATAR);
         
-        if (!(exclusive && avatar == from))
+        if (!(exclusive && avatar == from && session == session_key))
         {
-            enqueue_data_for_avatar(avatar, message);
+            enqueue_data(avatar, NULL_KEY, message);
         }
     }
 }
@@ -134,12 +133,14 @@ requestURL()
 
 on_new_url(string url)
 {
-    integer i = llGetListLength(listener_queue) / 4;
+    integer i = llGetListLength(listener_queue) / QUEUE_LENGTH;
     
     for (i; i > 0; i--)
     {
-        listener_queue = llListReplaceList(listener_queue, [NULL_KEY], (i - 1) * 4 + 1, (i - 1) * 4 + 1);
+        listener_queue = llListReplaceList(listener_queue, [NULL_KEY], (i - 1) * QUEUE_LENGTH + QUEUE_POLL, (i - 1) * QUEUE_LENGTH + QUEUE_POLL);
     }
+
+    llOwnerSay(get_public_url(llGetOwner()));
     
     llMessageLinked(LINK_THIS, CHAN_URL_TRACKER, llList2Json(JSON_OBJECT, [
         "type", "set",
@@ -153,36 +154,41 @@ jsonp_response(key request_id, string name, string json)
     llHTTPResponse(request_id, 200, name + "(" + json + ")");
 }
 
-send_queue(key avatar)
+send_queue_for_session(key session)
 {
-    integer index = llListFindList(listener_queue, [avatar]);
+    integer index = llListFindList(listener_queue, [session]);
     if (index == -1) return;
+
+    index = index - QUEUE_SESSION;
     
-    key poll_id = llList2Key(listener_queue, index + 1);
+    key poll_id = llList2Key(listener_queue, index + QUEUE_POLL);
     if (poll_id == NULL_KEY) return;
     
-    string queue = llList2String(listener_queue, index + 3);
+    string queue = llList2String(listener_queue, index + QUEUE_QUEUE);
     if (queue == "[]") return;
     
     jsonp_response(poll_id, "poll_response", llList2Json(JSON_OBJECT, [
         "status", "ok",
         "data", queue
     ]));
-    listener_queue = llListReplaceList(listener_queue, [], index, index + 3);
+
+    listener_queue = llListReplaceList(listener_queue, [], index, index + QUEUE_QUEUE);
 }
 
-on_poll(key avatar, key poll_id)
+on_poll(key avatar, key session, key poll_id)
 {
-    integer index = llListFindList(listener_queue, [avatar]);
-    
+    integer index = llListFindList(listener_queue, [session]);
+
     if (index == -1)
     {
-        listener_queue += [avatar, poll_id, llGetUnixTime(), "[]"];
+        listener_queue += [avatar, session, poll_id, llGetUnixTime(), "[]"];
     }
     else
     {
-        listener_queue = llListReplaceList(listener_queue, [poll_id, llGetUnixTime()], index + 1, index + 2);
-        send_queue(avatar);
+        index = index - QUEUE_SESSION;
+
+        listener_queue = llListReplaceList(listener_queue, [poll_id, llGetUnixTime()], index + QUEUE_POLL, index + QUEUE_TIME);
+        send_queue_for_session(session);
     }
 }
 
@@ -210,7 +216,7 @@ default
     {
         if (num == CHAN_SERVER_QUEUE)
         {
-            enqueue_data(id, str);
+            enqueue_data(id, NULL_KEY, str);
         }
         else if (num == CHAN_PRINT_QUEUE)
         {
@@ -244,26 +250,15 @@ default
         string app = llJsonGetValue(data, ["app"]);
         string avatar = llJsonGetValue(data, ["avatar"]);
         string token = llJsonGetValue(data, ["token"]);
-        
-        if (path == "/post")
-        {
-            llOwnerSay(llList2Json(JSON_OBJECT, [
-                "type", "http_request",
-                "id", id,
-                "method", method,
-                "body", body,
-                "path", path,
-                "raw_data", raw_data,
-                "data", data
-            ]));
-        }
-        else
-        {
-            llOwnerSay(path);
-        }
+        key session = (key)llJsonGetValue(data, ["session"]);
         
         string message_id = llJsonGetValue(data, ["message_id"]);
         string message = llBase64ToString(llJsonGetValue(data, ["message"]));
+
+        if (session == NULL_KEY) {
+            jsonp_error(id, message_id, "No session!");
+            return;
+        }
 
         if (token != get_token(avatar))
         {
@@ -279,7 +274,7 @@ default
             }
             else if (path == "/poll")
             {
-                on_poll(avatar, id);
+                on_poll(avatar, session, id);
             }
             else if (path == "/post")
             {
@@ -293,7 +288,7 @@ default
                 
                 if (llJsonGetValue(message, ["type"]) == "broadcast")
                 {
-                    broadcast(avatar, msg, llJsonGetValue(message, ["exclusive"]) == "true");
+                    broadcast(avatar, session, msg, llJsonGetValue(message, ["exclusive"]) == "true");
                 }
                 else
                 {
