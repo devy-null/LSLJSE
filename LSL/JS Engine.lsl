@@ -3,6 +3,7 @@ integer CHAN_SERVER_POST = -6546536;
 integer CHAN_SERVER_QUEUE = -6343254;
 
 integer CHAN_PRINT_QUEUE = -6344854;
+integer CHAN_GET_URL = -6343567;
 
 integer NONCE = 453453;
 
@@ -190,13 +191,20 @@ default
     state_entry()
     {
         requestURL();
-        llOwnerSay(get_public_url(llGetOwner()));
-        llOwnerSay(get_public_url("7449c8bf-28af-40f8-988e-785cbf20e20b"));
+        llListen(CHAN_GET_URL, "", llGetOwner(), "");
     }
     
     attach(key avatar) { if (avatar) requestURL(); }
     on_rez(integer param) { requestURL(); }
     changed(integer change) { if(change & (CHANGED_REGION | CHANGED_REGION_START | CHANGED_TELEPORT)) requestURL(); }
+
+    listen(integer chan, string name, key id, string str)
+    {
+        if (chan == CHAN_GET_URL)
+        {
+            llOwnerSay(get_public_url(str));
+        }
+    }
     
     link_message(integer sender_num, integer num, string str, key id)
     {

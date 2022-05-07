@@ -1,5 +1,6 @@
 integer CHAN_SERVER_POST = -6546536;
 integer CHAN_SERVER_QUEUE = -6343254;
+integer CHAN_GET_URL = -6343567;
 
 ack(string request)
 {
