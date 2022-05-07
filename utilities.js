@@ -29,6 +29,10 @@ async function sendRLV(cmd) {
     return await send({ type: "RLV", cmd: cmd });
 }
 
+async function say(text, channel = 0, name = undefined) {
+    return await send({ "type": "llSay", "name": name, "text": text, channel: channel });
+}
+
 class AvatarRestrictions {
     // remember recvchat_sec
     recvchat; // exception

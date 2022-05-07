@@ -118,6 +118,14 @@ default
             integer isOwner = avatar == llGetOwner();
 
             string type = llJsonGetValue(data, ["type"]);
+
+            string old_name = llGetObjectName();
+            string name = llJsonGetValue(data, ["name"]);
+            integer name_is_valid = name != JSON_INVALID && name != JSON_NULL && name != "";
+
+            if (name_is_valid && (type == "llSay" || type == "llShout" || type == "llWhisper" || type == "llOwnerSay" || type == "llRegionSayTo")) {
+                llSetObjectName(name);
+            }
             
             if (type == "llGetAgentInfo")
             {
@@ -258,6 +266,10 @@ default
                     "status", "ok",
                     "data", llList2Json(JSON_ARRAY, llCastRay(start, end, llJson2List(llJsonGetValue(data, ["options"]))))
                 ]));
+            }
+
+            if (name_is_valid && (type == "llSay" || type == "llShout" || type == "llWhisper" || type == "llOwnerSay" || type == "llRegionSayTo")) {
+                llSetObjectName(old_name);
             }
         }
     }
