@@ -150,6 +150,10 @@ async function send_with_iframe(path, data, timeout) {
 				cleanup();
 				reject({ message: 'timeout' });
 			}, timeout);
+		} else {
+			timeoutid = setTimeout(() => {
+				cleanup();
+			}, 30000);
 		}
 
 		form.submit();
@@ -315,7 +319,7 @@ async function loadApp(app) {
 	let getFile = async (path) => {
 		let downloadPath;
 
-		if (new URL(location).searchParams.get('localhost') == 'true') {
+		if (new URL(location).searchParams.get('localapp') == 'true') {
 			downloadPath = `http://127.0.0.1:8080/App/${path}`;
 		}
 		else {
@@ -359,15 +363,25 @@ const init = new Promise((resolve, reject) => {
 	_setInitDone = resolve;
 });
 
-async function main() {
-	if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page']) {
-		showError('Invalid url')
+async function prepareApp() {
+	if (new URL(location).searchParams.get('localapp') == 'true') {
+		return {};
+	} else {
+		if (!base_data || !base_data['app'] || !base_data['avatar'] || !base_data['token'] || !base_data['page']) {
+			showError('Invalid url');
+		}
+		else {
+			let gitApp = (await getApps()).find(app => app.id == base_data['page']);
+			if (!gitApp) throw 'Invalid app!';
+			return gitApp;
+		}
 	}
-	else {
-		gitApp = (await getApps()).find(app => app.id == base_data['page']);
+}
 
-		if (gitApp) {
-			let fetchedURL = await (server_url_promise = getURL()).catch(err => null);
+async function main() {
+	await prepareApp()
+		.then(async app => {
+			let fetchedURL = await(server_url_promise = getURL()).catch(err => null);
 
 			if (fetchedURL) {
 				await loadApp(gitApp);
@@ -378,11 +392,9 @@ async function main() {
 			else {
 				showError(`Can't connect!`);
 			}
-		}
-		else {
-			showError('Invalid app');
-		}
-	}
+		}, err => {
+			showError(err);
+		});
 }
 
 main();
