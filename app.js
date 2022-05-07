@@ -145,9 +145,29 @@ const rules = {
 Vue.component('restriction-option', {
   props: ['restriction', 'option'],
   data: () => ({
-    show: false
+    show: false,
+    display: '',
+    loading: false
   }),
-  computed: {},
+  watch: {
+    option: {
+      async handler(option) {
+        if (this.restriction.parameter?.type === 'avatar') {
+          this.display = await NameLookup.Instance.lookup(option.value);
+        } else {
+          this.display = undefined;
+        }
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    async remove() {
+      this.loading = true;
+      await sendRLV(`@${this.restriction.cmd}:${this.option.value}=rem`);
+      this.loading = false;
+    }
+  },
   template: `
 <div>
 <template>
@@ -159,11 +179,10 @@ Vue.component('restriction-option', {
       Except
     </v-card-title>
 
-    <v-card-text>
-      {{ option.display ?? option.value }}
+    <v-card-text class="pb-0">
+      {{ display }}
     </v-card-text>
-
-    <v-card-text class="text-caption" v-if="option.display">
+    <v-card-text class="pt-0" v-if="display">
       {{ option.value }}
     </v-card-text>
     
@@ -172,8 +191,14 @@ Vue.component('restriction-option', {
     </v-card-subtitle>
 
     <v-card-actions>
-      <v-btn v-if="option.local" color="primary" text>Remove</v-btn>
+      <v-btn v-if="option.local" color="primary" text @click="remove">Remove</v-btn>
     </v-card-actions>
+
+    <v-overlay :absolute="true" :value="loading">
+      <div class="text-center">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      </div>
+    </v-overlay>
   </v-card>
 </template>
 </div>`
@@ -184,11 +209,18 @@ Vue.component('restriction', {
   data: () => ({
     show: false,
     valid: false,
-    input_value: ''
+    input_value: '',
+    loading: false,
+    changeDetection: null
   }),
   computed: {
     haveMe() {
       return this.restriction.options?.some(opt => opt.value == base_data['avatar']) === true;
+    }
+  },
+  watch: {
+    restriction(restriction) {
+      this.loading = false;
     }
   },
   methods: {
@@ -199,11 +231,13 @@ Vue.component('restriction', {
       this.$emit('action');
     },
     async restrict() {
+      this.loading = true;
       await sendRLV(`@${this.restriction.cmd}=add`);
       this.$emit('restricted');
       this.$emit('action');
     },
     async allow() {
+      this.loading = true;
       await sendRLV(`@${this.restriction.cmd}=rem`);
       this.$emit('allowed');
       this.$emit('action');
@@ -225,10 +259,11 @@ Vue.component('restriction', {
       Another object is {{ restriction.local ? 'also holding' : 'holding' }} this restriction
     </v-card-subtitle>
 
-    <v-card-text v-if="!restriction.local">
+    <v-card-text>
       <div v-if="restriction.options">
-        <restriction-option v-for="item in restriction.options" v-bind:restriction="restriction" v-bind:option="item"></restriction-option>
+        <restriction-option v-for="item in restriction.options" :key="item.value" v-bind:restriction="restriction" v-bind:option="item"></restriction-option>
       </div>
+
       <v-form v-model="valid">
         <v-card class="mx-auto my-10" max-width="344" v-if="restriction.parameter">
           <v-card-title>Add exception</v-card-title>
@@ -289,6 +324,11 @@ Vue.component('restriction', {
         </v-card-text>
       </div>
     </v-expand-transition>
+    <v-overlay :absolute="true" :value="loading">
+      <div class="text-center">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      </div>
+    </v-overlay>
   </v-card>
 </template>
 </div>`
@@ -297,15 +337,32 @@ Vue.component('restriction', {
 var app = new Vue({
   el: '#app',
   vuetify: new Vuetify(),
-  data: {
+  data: () => ({
     target: '',
     show_only_active_restrictions: false,
-    restrictions: []
+    restrictions: [],
+    avatar_key: '',
+    avatar_name: ''
+  }),
+  async created() {
+    this.avatar_key = base_data['avatar'];
+    this.avatar_name = await NameLookup.Instance.lookup(this.avatar_key);
   },
   mounted() {
     this.loadRestrictions();
+
+    document.addEventListener('RLV', this.onRLVEvent);
+  },
+  unmounted() {
+    document.removeEventListener('RLV', this.onRLVEvent);
   },
   methods: {
+    async clear() {
+      await sendRLV(`@clear`);
+    },
+    async onRLVEvent(event) {
+      await this.loadRestrictions();
+    },
     async loadRestrictions() {
       // let cached_restrictions = new Cache('CachedRestrinctions');
       // let loaded_restrictions = await cached_restrictions.getOrFetch('restrictions', async () => await getRLVRestrictions());
@@ -313,19 +370,9 @@ var app = new Vue({
 
       let restrictions = managed_restrictions.map(restriction => ({ ...restriction, ...loaded_restrictions[restriction.cmd] }));
 
-      console.log('a', restrictions);
-
-      for (let restriction of restrictions) {
-        if (restriction.options && restriction.parameter?.type == "avatar") {
-          for(let option of restriction.options) {
-            option.display = await NameLookup.Instance.lookup(option.value);
-          }
-        }
-      }
-
-      console.log('b', restrictions);
-
       this.restrictions = restrictions;
+
+      this.$emit('freshrestrictionsinfo');
     }
   }
 });

@@ -1,15 +1,15 @@
 <div id="app">
   <v-app>
     <v-main>
+      <v-container text-h1 text-center>{{avatar_name}}</v-container>
       <v-switch v-model="show_only_active_restrictions" :label="`Show only active restrictions`"></v-switch>
+      <v-btn color="primary" text @click="clear">Clear all</v-btn>
       <div>
         <restriction
-          v-for="item in restrictions"
+          v-for="item in restrictions" :key="item.cmd"
           v-bind:restriction="item"
           
           v-if="!show_only_active_restrictions || item.active"
-
-          v-on:action="loadRestrictions"
 
           ></restriction>
       </div>
