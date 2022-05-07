@@ -117,6 +117,7 @@ string get_public_url(key avatar)
 {
     string json = "{}";
     json = llJsonSetValue(json, ["app"],  llGetKey());
+    json = llJsonSetValue(json, ["target"], llGetOwner());
     json = llJsonSetValue(json, ["avatar"], avatar);
     json = llJsonSetValue(json, ["token"], get_token(avatar));
     json = llJsonSetValue(json, ["page"], PAGE);
